@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 include_once "User.php";
 include_once "Users.php";
-include_once "StdClass.php";
 include_once "Database\Database.php";
 
 use System\User;
