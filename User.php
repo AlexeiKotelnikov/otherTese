@@ -7,22 +7,33 @@ namespace System;
 use DateTime;
 use Exception;
 use PDO;
+use stdClass;
 
 /**
- * 2. * Автор: Алексей Котельников
- * 3. *
- * 4. * Дата реализации: 27.07.2022 17:00
- * 5. *
- * 6. * Дата изменения: 27.07.2022 19:40
- * 7. *
- * 8. * Утилита для работы с базой данных*/
+ * 1. * Автор: Алексей Котельников
+ * 2. *
+ * 3. * Дата реализации: 27.07.2022 17:00
+ * 4. *
+ * 5. * Дата изменения:  xx.xx.2022 19:40
+ * 6. *
+ * 7. * Утилита для работы с базой данных*/
 class User
 {
     /**
-     * 2. класс: User
-     * 3. Подробное описание класса, что он делает, как он делает, что, кому
-     * куда передает.
-     * 4. */
+     * класс: User
+     * 3. Подробное описание класса, что он делает, как он делает, что, кому куда передает.
+     * Конструктор класса либо создает человека в БД с заданной информацией,
+     * либо берет информацию из БД по id (предусмотрена валидация данных);
+     * createUser() - Сохранение полей экземпляра класса в БД;
+     * removeUser() - Удаление человека из БД в соответствии с id объекта;
+     * selectUser() - Выбор человека из БД в соответствии с переданным id;
+     * conversionDate() - static преобразование даты рождения в возраст (полных лет);
+     * conversionGender() - static преобразование пола из двоичной системы в текстовую (муж, жен);
+     * formatPerson() - Форматирование человека с преобразованием возраста и (или) пола
+     * в зависимости от параметров (возвращает новый экземпляр StdClass
+     * со всеми полями изначального класса)
+     * validator() - здесь быть не должно, но пока надо реализовать иные вещи :)
+     */
 
     public int $id;
     public string $name;
@@ -33,6 +44,17 @@ class User
     protected $conn;
     private array $templates = ['name', 'last_name', 'birthday', 'gender', 'city'];
 
+    /**
+     * @param $db
+     * @param array $params
+     * при создании класса указываем определенное количество параметров.
+     * Если в массиве будет присутсвовать ключ 'id_user' и он будет числом, то мы вызываем метод selectUser(),
+     * который ищет в БД юзера с таким id.
+     * Если не выполняется первое условие, то проверяем количество ключей и их соответсвие с ключами в поле $templates
+     * Если все хорошо - идет вызов метода validator(), который проверяет на валидность переданные параметры
+     * Если нет ошибок, то вызываем метод createUser()
+     * Если же есть какие-то ошибки на одном из этих шагов, то идет выброс ошибки
+     */
     public function __construct($db, array $params = [])
     {
         $this->conn = $db;
@@ -51,6 +73,12 @@ class User
         }
     }
 
+    /**
+     * @param array $fields
+     * @return bool
+     * Составляем sql-запрос, присваиваем переданные значения свойствам объекта, биндим параметры через метод bindParam
+     * Пробуем выполнить запрос
+     */
     public function createUser(array $fields): bool
     {
         $query = "INSERT INTO
@@ -79,17 +107,27 @@ class User
         }
     }
 
-    public function removeUser(int $id): bool
+    /**
+     * @return bool
+     * бинд, составление запроса, выполнение запроса
+     */
+    public function removeUser(): bool
     {
-        $id = htmlspecialchars(strip_tags((string)$id));//стоит ли добавлять (string) дабы успокоить IDE
         $sql = "DELETE from users where id_user = :id";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(":id", $id);
+        $stmt->bindParam(":id", $this->id);
         $stmt->execute();
 
         return false;//надо ли это
     }
 
+    /**
+     * @param int $id
+     * @return array|false
+     * Проверка полученного id, бинд, составление запроса, выполнение запроса
+     * при получении массива, присваиваем полученные из Бд значения свойствам объекта
+     * при получении пустого значения - выдаем ошибку
+     */
     public function selectUser(int $id): array|false
     {
         $sql = "SELECT * from users where id_user = :id";
@@ -113,7 +151,13 @@ class User
     }
 
     /**
+     * @param User $user
+     * @return string
      * @throws Exception
+     *
+     * форматируем дату в 'd-m-Y H:i:s'
+     * вычисляем разницу между $datetime = 'now' и $user->birthday
+     * форматируем в количество лет и присваиваем $user->birthday
      */
     static function conversionDate(User $user): string
     {
@@ -123,6 +167,10 @@ class User
         return $user->birthday = sprintf("%d", $diff->y);
     }
 
+    /**
+     * @param User $user
+     * @return string
+     */
     static function conversionGender(User $user): string
     {
         if ($user->gender == 1) {
@@ -133,19 +181,27 @@ class User
     }
 
     /**
+     * @param User $user
+     * @param int|null $gender
+     * @param string|null $date
+     * @return stdClass
      * @throws Exception
      */
-    public function formatPerson(User $user, int $gender = null, string $date = null): \stdClass
+    public function formatPerson(User $user, int $gender = null, string $date = null): stdClass
     {
         $user::conversionDate($user);
         $user::conversionGender($user);
         $a = (array($user));//нахера делать это
-        $c = (object)$a;//а потом это
-        var_dump($user);//если после двух вышевызванных методов, мы получим измененный и заполненный объект
+        //а потом это
+        //var_dump($user);//если после двух вышевызванных методов, мы получим измененный и заполненный объект
 
-        return $c;
+        return (object)$a;
     }
 
+    /**
+     * @param array $fields
+     * @return array|null
+     */
     protected function validator(array $fields): array|null
     {
         $errors = [];
