@@ -184,7 +184,7 @@ class User
      * @param User $user
      * @return stdClass
      * @throws Exception
-     * Convert the date and sex of a person, create an empty stdClass class and fill it with User's fields
+     * Convert the date and gender of a person, create an empty stdClass class and fill it with User's fields
      */
     public function formatPerson(User $user): stdClass
     {

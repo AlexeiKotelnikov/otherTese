@@ -19,12 +19,14 @@ $database = new Database();
 $db = $database->getConnection();
 
 $user = new User($db, ['id_user'=> 108]);
-var_dump($user);
 
 try {
     $a = $user->formatPerson($user);
-    var_dump($a);
 } catch (Exception $e) {
     var_dump(DateTime::getLastErrors());
 }
+
+$users = new Users($db,30,70);
+$users->selectUsers()();
+$users->deleteUsers();
 
